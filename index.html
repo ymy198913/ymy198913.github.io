@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心理健康综合评估系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e0e0e0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .form-container {
+            padding: 40px 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 30px;
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .radio-option {
+            position: relative;
+        }
+
+        .radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .radio-option label {
+            display: block;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .question-block {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .question-block:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .question-text {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 8px;
+            padding: 0 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.6);
+        }
+
+        .result-panel {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-panel.show {
+            display: block;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .score-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .score-value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .score-value.warning {
+            color: #e74c3c;
+        }
+
+        .score-value.caution {
+            color: #f39c12;
+        }
+
+        .score-value.normal {
+            color: #27ae60;
+        }
+
+        .interpretation {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #c33;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #3c3;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                border-radius: 0;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .radio-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>心理健康综合评估系统</h1>
+            <p>感知压力量表(PSS-10) + UCLA孤独量表 + SDS抑郁自评量表</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <div class="form-container">
+            <div class="error-message" id="errorMsg"></div>
+            <div class="success-message" id="successMsg"></div>
+
+            <!-- 第一部分：基础信息 -->
+            <div class="section active" id="section1">
+                <h2 class="section-title">基础信息</h2>
+                
+                <div class="form-group">
+                    <label for="patientId">病人编码 *</label>
+                    <input type="text" id="patientId" placeholder="请输入唯一编码（如：P001）" required>
+                </div>
+
+                <div class="form-group">
+                    <label>性别 *</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="male" value="男" required>
+                            <label for="male">男</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="female" value="女" required>
+                            <label for="female">女</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">年龄 *</label>
+                    <input type="number" id="age" min="1" max="120" placeholder="请输入年龄（岁）" required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-primary" onclick="nextSection(2)">开始评估</button>
+                </div>
+            </div>
+
+            <!-- 第二部分：PSS-10 感知压力量表 -->
+            <div class="section" id="section2">
+                <h2 class="section-title">感知压力量表 (PSS-10)</h2>
+                <p style="margin-bottom: 20px; color: #666;">请回想过去一个月的感受，选择最符合您情况的选项。</p>
+                
+                <div id="pssQuestions"></div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary" onclick="prevSection(1)">返回</button>
+                    <button type="button" class="btn-primary" onclick="nextSection(3)">下一步</button>
+                </div>
+            </div>
+
+            <!-- 第三部分：UCLA 孤独量表 -->
+            <div class="section" id="section3">
+                <h2 class="section-title">UCLA 孤独量表</h2>
+                <p style="margin-bottom: 20px; color: #666;">请根据您的实际感受选择最符合的选项。</p>
+                
+                <div id="uclaQuestions"></div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary" onclick="prevSection(2)">返回</button>
+                    <button type="button" class="btn-primary" onclick="nextSection(4)">下一步</button>
+                </div>
+            </div>
+
+            <!-- 第四部分：SDS 抑郁自评量表 -->
+            <div class="section" id="section4">
+                <h2 class="section-title">SDS 抑郁自评量表</h2>
+                <p style="margin-bottom: 20px; color: #666;">请根据过去一周的实际感觉选择最符合的选项。</p>
+                
+                <div id="sdsQuestions"></div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-secondary" onclick="prevSection(3)">返回</button>
+                    <button type="button" class="btn-success" onclick="submitForm()">提交评估</button>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div class="loading" id="loadingSection">
+                <div class="spinner"></div>
+                <p>正在计算评分并发送报告...</p>
+            </div>
+
+            <!-- 结果展示 -->
+            <div class="result-panel" id="resultPanel">
+                <h2 class="section-title">评估结果</h2>
+                
+                <div class="score-card">
+                    <span class="score-label">感知压力得分 (PSS-10)</span>
+                    <span class="score-value" id="pssScore">0</span>
+                </div>
+                
+                <div class="score-card">
+                    <span class="score-label">孤独感得分 (UCLA)</span>
+                    <span class="score-value" id="uclaScore">0</span>
+                </div>
+                
+                <div class="score-card">
+                    <span class="score-label">抑郁程度得分 (SDS)</span>
+                    <span class="score-value" id="sdsScore">0</span>
+                </div>
+
+                <div class="interpretation" id="interpretation"></div>
+
+                <div class="btn-group" style="margin-top: 30px;">
+                    <button type="button" class="btn-primary" onclick="location.reload()">新的评估</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 量表数据
+        const pssQuestions = [
+            "1. 因为发生了一些意外的事情，感到心烦意乱",
+            "2. 感觉无法掌控生活中的重要事情",
+            "3. 感到紧张和有压力",
+            "4. 成功地处理了生活中的恼人麻烦（反向计分）",
+            "5. 感到能有效地应对生活中重要的变化（反向计分）",
+            "6. 确信能够处理好自己的个人问题（反向计分）",
+            "7. 感到事情进展顺利（反向计分）",
+            "8. 感到无法处理必须做的事情",
+            "9. 能够控制生活中的恼怒情绪（反向计分）",
+            "10. 感到困难堆积得无法克服"
+        ];
+
+        const uclaQuestions = [
+            "1. 您是否经常感到与周围人缺乏联系？",
+            "2. 您是否经常感到缺少陪伴？",
+            "3. 您是否经常感到被冷落？",
+            "4. 您是否经常感到与人隔绝？",
+            "5. 您是否经常感到与他人的关系不够亲密？",
+            "6. 您是否经常感到没有人可以求助？",
+            "7. 您是否经常感到没有人真正了解您？",
+            "8. 您是否经常感到独自一人？",
+            "9. 您是否经常感到身边有朋友但无法与他们交流您的真实感受？",
+            "10. 您是否经常感到没有人可以倾诉？",
+            "11. 您是否经常感到没有人可以分享您的忧虑？",
+            "12. 您是否经常感到在社交场合被排斥？",
+            "13. 您是否经常感到没有人可以亲近？",
+            "14. 您是否经常感到没有人可以依靠？",
+            "15. 您是否经常感到没有人关心您？",
+            "16. 您是否经常感到在社交圈中像个外人？",
+            "17. 您是否经常感到没有人可以信赖？",
+            "18. 您是否经常感到没有人可以倾诉心声？",
+            "19. 您是否经常感到与他人的关系很肤浅？",
+            "20. 您是否经常感到没有人可以分享您的快乐与悲伤？"
+        ];
+
+        const sdsQuestions = [
+            "1. 我感到情绪沮丧，郁闷",
+            "2. 我感到早晨心情最好（反向计分）",
+            "3. 我要哭或想哭",
+            "4. 我夜间睡眠不好",
+            "5. 我吃饭像平时一样多（反向计分）",
+            "6. 我与异性密切接触时和以往一样感到愉快（反向计分）",
+            "7. 我发觉我的体重在下降",
+            "8. 我有便秘的苦恼",
+            "9. 我心跳比平时快",
+            "10. 我无故感到疲劳",
+            "11. 我的头脑像往常一样清楚（反向计分）",
+            "12. 我做事情像平时一样不感到困难（反向计分）",
+            "13. 我坐卧不安，难以保持平静",
+            "14. 我对未来感到有希望（反向计分）",
+            "15. 我比平时更容易激怒",
+            "16. 我觉得决定什么事很容易（反向计分）",
+            "17. 我感到自己是有用的和不可缺少的人（反向计分）",
+            "18. 我的生活很有意义（反向计分）",
+            "19. 假若我死了别人会过得更好",
+            "20. 我仍旧喜爱自己平时喜爱的东西（反向计分）"
+        ];
+
+        // ✅ 初始化 EmailJS - 已启用
+        (function() {
+            emailjs.init("RvQu3FYHVQk6WqqZk");  // 您的 Public Key
+        })();
+
+        let currentSection = 1;
+        const totalSections = 4;
+
+        // 生成问题HTML
+        function generateQuestions(containerId, questions, scaleType) {
+            const container = document.getElementById(containerId);
+            let html = '';
+            
+            questions.forEach((q, index) => {
+                const qNum = index + 1;
+                const name = `${scaleType}_${qNum}`;
+                
+                html += `
+                    <div class="question-block">
+                        <div class="question-text">${q}</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" name="${name}" id="${name}_0" value="0" required>
+                                <label for="${name}_0">从不</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="${name}" id="${name}_1" value="1" required>
+                                <label for="${name}_1">很少</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="${name}" id="${name}_2" value="2" required>
+                                <label for="${name}_2">有时</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="${name}" id="${name}_3" value="3" required>
+                                <label for="${name}_3">经常</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" name="${name}" id="${name}_4" value="4" required>
+                                <label for="${name}_4">总是</label>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 初始化问题
+        generateQuestions('pssQuestions', pssQuestions, 'pss');
+        generateQuestions('uclaQuestions', uclaQuestions, 'ucla');
+        generateQuestions('sdsQuestions', sdsQuestions, 'sds');
+
+        // 更新进度条
+        function updateProgress() {
+            const progress = (currentSection / totalSections) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // 切换部分
+        function nextSection(section) {
+            // 验证当前部分
+            if (!validateSection(currentSection)) {
+                showError('请完成所有必填项');
+                return;
+            }
+            
+            document.getElementById(`section${currentSection}`).classList.remove('active');
+            currentSection = section;
+            document.getElementById(`section${currentSection}`).classList.add('active');
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+
+        function prevSection(section) {
+            document.getElementById(`section${currentSection}`).classList.remove('active');
+            currentSection = section;
+            document.getElementById(`section${currentSection}`).classList.add('active');
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+
+        // 验证部分
+        function validateSection(section) {
+            const currentSec = document.getElementById(`section${section}`);
+            const required = currentSec.querySelectorAll('[required]');
+            
+            for (let field of required) {
+                if (field.type === 'radio') {
+                    const name = field.name;
+                    if (!currentSec.querySelector(`input[name="${name}"]:checked`)) {
+                        return false;
+                    }
+                } else if (!field.value.trim()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMsg');
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        }
+
+        function showSuccess(msg) {
+            const successDiv = document.getElementById('successMsg');
+            successDiv.textContent = msg;
+            successDiv.style.display = 'block';
+            setTimeout(() => successDiv.style.display = 'none', 5000);
+        }
+
+        // 计算PSS-10得分（反向计分：4,5,6,7,9题）
+        function calculatePSS() {
+            let score = 0;
+            const reverseItems = [4, 5, 6, 7, 9];
+            
+            for (let i = 1; i <= 10; i++) {
+                let val = parseInt(document.querySelector(`input[name="pss_${i}"]:checked`).value);
+                if (reverseItems.includes(i)) {
+                    val = 4 - val; // 反向计分：0->4, 1->3, 2->2, 3->1, 4->0
+                }
+                score += val;
+            }
+            return score;
+        }
+
+        // 计算UCLA得分（20题，4级评分：1-4分）
+        function calculateUCLA() {
+            let score = 0;
+            for (let i = 1; i <= 20; i++) {
+                // UCLA通常使用1-4分制，但这里我们使用0-4，所以+1转换
+                let val = parseInt(document.querySelector(`input[name="ucla_${i}"]:checked`).value) + 1;
+                score += val;
+            }
+            return score;
+        }
+
+        // 计算SDS得分（反向计分：2,5,6,11,12,14,16,17,18,20题）
+        function calculateSDS() {
+            let score = 0;
+            const reverseItems = [2, 5, 6, 11, 12, 14, 16, 17, 18, 20];
+            
+            for (let i = 1; i <= 20; i++) {
+                let val = parseInt(document.querySelector(`input[name="sds_${i}"]:checked`).value);
+                if (reverseItems.includes(i)) {
+                    val = 4 - val; // 反向计分
+                }
+                score += val;
+            }
+            
+            // SDS粗分转换为标准分（乘以1.25取整）
+            return Math.round(score * 1.25);
+        }
+
+        // 获取结果解释
+        function getInterpretation(pss, ucla, sds) {
+            let html = '<h3 style="margin-bottom:15px;color:#333;">结果解读</h3>';
+            
+            // PSS解释
+            html += '<p><strong>感知压力 (PSS-10)：</strong>';
+            if (pss <= 13) html += '<span style="color:#27ae60">压力水平较低</span>。您目前感受到的压力在可控范围内。</p>';
+            else if (pss <= 26) html += '<span style="color:#f39c12">压力水平中等</span>。您感受到了一定程度的压力，建议适当放松。</p>';
+            else html += '<span style="color:#e74c3c">压力水平较高</span>。您处于高压力状态，建议寻求专业帮助或进行压力管理。</p>';
+            
+            // UCLA解释
+            html += '<p><strong>孤独感 (UCLA)：</strong>';
+            if (ucla <= 28) html += '<span style="color:#27ae60">孤独感较低</span>。您的社交连接良好。</p>';
+            else if (ucla <= 44) html += '<span style="color:#f39c12">中等孤独感</span>。您偶尔感到孤独，建议增加社交活动。</p>';
+            else html += '<span style="color:#e74c3c">高孤独感</span>。您经常感到孤独，建议主动寻求社交支持。</p>';
+            
+            // SDS解释
+            html += '<p><strong>抑郁程度 (SDS)：</strong>';
+            if (sds < 53) html += '<span style="color:#27ae60">正常范围</span>。无抑郁症状。</p>';
+            else if (sds < 63) html += '<span style="color:#f39c12">轻度抑郁</span>。建议关注情绪变化，适当自我调节。</p>';
+            else if (sds < 73) html += '<span style="color:#e67e22">中度抑郁</span>。建议咨询专业心理医生。</p>';
+            else html += '<span style="color:#e74c3c">重度抑郁</span>。强烈建议尽快寻求专业心理帮助。</p>';
+            
+            html += '<p style="margin-top:15px;font-size:0.9em;color:#888;">注：本评估仅供参考，不能替代专业诊断。如有需要，请咨询专业心理医生。</p>';
+            
+            return html;
+        }
+
+        // 提交表单
+        async function submitForm() {
+            if (!validateSection(4)) {
+                showError('请完成所有题目');
+                return;
+            }
+
+            // 显示加载
+            document.getElementById(`section${currentSection}`).classList.remove('active');
+            document.getElementById('loadingSection').classList.add('show');
+
+            // 收集数据
+            const patientId = document.getElementById('patientId').value;
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            const age = document.getElementById('age').value;
+            
+            const pssScore = calculatePSS();
+            const uclaScore = calculateUCLA();
+            const sdsScore = calculateSDS();
+
+            // 准备邮件内容
+            const emailData = {
+                to_email: '244852188@qq.com',
+                subject: `心理健康评估报告 - 编码：${patientId}`,
+                patient_id: patientId,
+                gender: gender,
+                age: age,
+                test_date: new Date().toLocaleString('zh-CN'),
+                pss_score: pssScore,
+                ucla_score: uclaScore,
+                sds_score: sdsScore,
+                pss_interpretation: pssScore <= 13 ? '低压力' : pssScore <= 26 ? '中等压力' : '高压力',
+                ucla_interpretation: uclaScore <= 28 ? '低孤独感' : uclaScore <= 44 ? '中等孤独感' : '高孤独感',
+                sds_interpretation: sdsScore < 53 ? '正常' : sdsScore < 63 ? '轻度抑郁' : sdsScore < 73 ? '中度抑郁' : '重度抑郁',
+                message: `
+病人编码：${patientId}
+性别：${gender}
+年龄：${age}岁
+评估时间：${new Date().toLocaleString('zh-CN')}
+
+【评估结果】
+感知压力量表(PSS-10)：${pssScore}分 (${pssScore <= 13 ? '低压力' : pssScore <= 26 ? '中等压力' : '高压力'})
+UCLA孤独量表：${uclaScore}分 (${uclaScore <= 28 ? '低孤独感' : uclaScore <= 44 ? '中等孤独感' : '高孤独感'})
+SDS抑郁自评量表：${sdsScore}分 (${sdsScore < 53 ? '正常' : sdsScore < 63 ? '轻度抑郁' : sdsScore < 73 ? '中度抑郁' : '重度抑郁'})
+
+【详细数据】
+PSS-10原始分：${pssScore}
+UCLA原始分：${uclaScore} 
+SDS标准分：${sdsScore}（粗分×1.25）
+                `
+            };
+
+            try {
+                // ✅ 发送邮件（使用 EmailJS）- 已启用
+                await emailjs.send("service_cg9vrgm", "template_uj6dzik", emailData);
+                
+                // 显示结果
+                document.getElementById('loadingSection').classList.remove('show');
+                document.getElementById('resultPanel').classList.add('show');
+                
+                // 更新分数显示
+                document.getElementById('pssScore').textContent = pssScore;
+                document.getElementById('uclaScore').textContent = uclaScore;
+                document.getElementById('sdsScore').textContent = sdsScore;
+                
+                // 设置颜色
+                const pssEl = document.getElementById('pssScore');
+                pssEl.className = 'score-value ' + (pssScore <= 13 ? 'normal' : pssScore <= 26 ? 'caution' : 'warning');
+                
+                const uclaEl = document.getElementById('uclaScore');
+                uclaEl.className = 'score-value ' + (uclaScore <= 28 ? 'normal' : uclaScore <= 44 ? 'caution' : 'warning');
+                
+                const sdsEl = document.getElementById('sdsScore');
+                sdsEl.className = 'score-value ' + (sdsScore < 53 ? 'normal' : sdsScore < 63 ? 'caution' : 'warning');
+                
+                document.getElementById('interpretation').innerHTML = getInterpretation(pssScore, uclaScore, sdsScore);
+                
+                showSuccess('评估完成！报告已发送至邮箱');
+                
+                // 同时输出到控制台，方便调试
+                console.log('评估数据：', emailData);
+                
+            } catch (error) {
+                document.getElementById('loadingSection').classList.remove('show');
+                document.getElementById(`section${currentSection}`).classList.add('active');
+                showError('发送失败，请检查网络或联系管理员');
+                console.error('发送错误：', error);
+            }
+        }
+
+        // 初始化进度条
+        updateProgress();
+    </script>
+</body>
+</html>
