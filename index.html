@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.2, user-scalable=1">
     <title>心理健康综合评估系统</title>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
@@ -107,6 +107,7 @@
             color: #555;
             font-weight: 500;
             font-size: 0.95em;
+            line-height: 1.5;
         }
 
         input[type="text"],
@@ -348,6 +349,111 @@
             border-left: 4px solid #3c3;
         }
 
+        .result-list {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .result-list h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .result-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-list li:last-child {
+            border-bottom: none;
+        }
+
+        .result-list .label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .result-list .value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .result-list .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-normal {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-caution {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-warning {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .copy-btn:hover {
+            background: #5a6268;
+        }
+
+        .copy-success {
+            background: #28a745 !important;
+        }
+
+        .email-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .email-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .email-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .email-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         @media (max-width: 600px) {
             .container {
                 border-radius: 0;
@@ -391,8 +497,8 @@
                 <h2 class="section-title">基础信息</h2>
                 
                 <div class="form-group">
-                    <label for="patientId">病人编码 *</label>
-                    <input type="text" id="patientId" placeholder="请输入唯一编码（如：P001）" required>
+                    <label for="patient_id">人员编码（请填写身份证号、姓名或病历号其中之一即可，以便能确定与临床信息匹配） *</label>
+                    <input type="text" id="patient_id" name="patient_id" placeholder="请输入身份证号、姓名或病历号" required>
                 </div>
 
                 <div class="form-group">
@@ -411,7 +517,7 @@
 
                 <div class="form-group">
                     <label for="age">年龄 *</label>
-                    <input type="number" id="age" min="1" max="120" placeholder="请输入年龄（岁）" required>
+                    <input type="number" id="age" name="age" min="1" max="120" placeholder="请输入年龄（岁）" required>
                 </div>
 
                 <div class="btn-group">
@@ -468,6 +574,7 @@
             <div class="result-panel" id="resultPanel">
                 <h2 class="section-title">评估结果</h2>
                 
+                <!-- 分数卡片 -->
                 <div class="score-card">
                     <span class="score-label">感知压力得分 (PSS-10)</span>
                     <span class="score-value" id="pssScore">0</span>
@@ -483,7 +590,25 @@
                     <span class="score-value" id="sdsScore">0</span>
                 </div>
 
+                <!-- 详细结果列表 -->
+                <div class="result-list">
+                    <h3>📋 评估详情汇总</h3>
+                    <ul id="resultDetails">
+                        <!-- 动态生成 -->
+                    </ul>
+                </div>
+
                 <div class="interpretation" id="interpretation"></div>
+
+                <!-- 邮件发送状态 -->
+                <div class="email-status" id="emailStatus" style="display: none;"></div>
+
+                <!-- 复制结果按钮 -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="copy-btn" id="copyBtn" onclick="copyResults()">
+                        📋 复制结果到剪贴板
+                    </button>
+                </div>
 
                 <div class="btn-group" style="margin-top: 30px;">
                     <button type="button" class="btn-primary" onclick="location.reload()">新的评估</button>
@@ -553,13 +678,18 @@
             "20. 我仍旧喜爱自己平时喜爱的东西（反向计分）"
         ];
 
-        // ✅ 初始化 EmailJS - 已启用
+        // 初始化 EmailJS
         (function() {
-            emailjs.init("RvQu3FYHVQk6WqqZk");  // 您的 Public Key
+            emailjs.init("RvQu3FYHVQk6WqqZk");
         })();
+
+        // Formspree配置（作为备用）- 请替换为你的Formspree ID
+        const FORMSPREE_ID = "YOUR_FORMSPREE_ID"; // 例如：xqkvoeyz
+        const FORMSPREE_URL = `https://formspree.io/f/${FORMSPREE_ID}`;
 
         let currentSection = 1;
         const totalSections = 4;
+        let assessmentData = {}; // 存储评估数据
 
         // 生成问题HTML
         function generateQuestions(containerId, questions, scaleType) {
@@ -615,7 +745,6 @@
 
         // 切换部分
         function nextSection(section) {
-            // 验证当前部分
             if (!validateSection(currentSection)) {
                 showError('请完成所有必填项');
                 return;
@@ -668,7 +797,7 @@
             setTimeout(() => successDiv.style.display = 'none', 5000);
         }
 
-        // 计算PSS-10得分（反向计分：4,5,6,7,9题）
+        // 计算PSS-10得分
         function calculatePSS() {
             let score = 0;
             const reverseItems = [4, 5, 6, 7, 9];
@@ -676,25 +805,24 @@
             for (let i = 1; i <= 10; i++) {
                 let val = parseInt(document.querySelector(`input[name="pss_${i}"]:checked`).value);
                 if (reverseItems.includes(i)) {
-                    val = 4 - val; // 反向计分：0->4, 1->3, 2->2, 3->1, 4->0
+                    val = 4 - val;
                 }
                 score += val;
             }
             return score;
         }
 
-        // 计算UCLA得分（20题，4级评分：1-4分）
+        // 计算UCLA得分
         function calculateUCLA() {
             let score = 0;
             for (let i = 1; i <= 20; i++) {
-                // UCLA通常使用1-4分制，但这里我们使用0-4，所以+1转换
                 let val = parseInt(document.querySelector(`input[name="ucla_${i}"]:checked`).value) + 1;
                 score += val;
             }
             return score;
         }
 
-        // 计算SDS得分（反向计分：2,5,6,11,12,14,16,17,18,20题）
+        // 计算SDS得分
         function calculateSDS() {
             let score = 0;
             const reverseItems = [2, 5, 6, 11, 12, 14, 16, 17, 18, 20];
@@ -702,41 +830,247 @@
             for (let i = 1; i <= 20; i++) {
                 let val = parseInt(document.querySelector(`input[name="sds_${i}"]:checked`).value);
                 if (reverseItems.includes(i)) {
-                    val = 4 - val; // 反向计分
+                    val = 4 - val;
                 }
                 score += val;
             }
             
-            // SDS粗分转换为标准分（乘以1.25取整）
             return Math.round(score * 1.25);
         }
 
-        // 获取结果解释
-        function getInterpretation(pss, ucla, sds) {
-            let html = '<h3 style="margin-bottom:15px;color:#333;">结果解读</h3>';
+        // 获取结果解释和等级
+        function getResultLevel(score, type) {
+            if (type === 'pss') {
+                if (score <= 13) return { level: '低压力', status: 'normal', desc: '压力水平较低，在可控范围内' };
+                if (score <= 26) return { level: '中等压力', status: 'caution', desc: '感受到一定程度压力，建议适当放松' };
+                return { level: '高压力', status: 'warning', desc: '处于高压力状态，建议寻求专业帮助' };
+            }
+            if (type === 'ucla') {
+                if (score <= 28) return { level: '低孤独感', status: 'normal', desc: '社交连接良好' };
+                if (score <= 44) return { level: '中等孤独感', status: 'caution', desc: '偶尔感到孤独，建议增加社交活动' };
+                return { level: '高孤独感', status: 'warning', desc: '经常感到孤独，建议主动寻求社交支持' };
+            }
+            if (type === 'sds') {
+                if (score < 53) return { level: '正常', status: 'normal', desc: '无抑郁症状' };
+                if (score < 63) return { level: '轻度抑郁', status: 'caution', desc: '建议关注情绪变化，适当自我调节' };
+                if (score < 73) return { level: '中度抑郁', status: 'warning', desc: '建议咨询专业心理医生' };
+                return { level: '重度抑郁', status: 'warning', desc: '强烈建议尽快寻求专业心理帮助' };
+            }
+        }
+
+        // 生成详细结果列表
+        function generateResultList(pss, ucla, sds) {
+            const pssResult = getResultLevel(pss, 'pss');
+            const uclaResult = getResultLevel(ucla, 'ucla');
+            const sdsResult = getResultLevel(sds, 'sds');
             
-            // PSS解释
-            html += '<p><strong>感知压力 (PSS-10)：</strong>';
-            if (pss <= 13) html += '<span style="color:#27ae60">压力水平较低</span>。您目前感受到的压力在可控范围内。</p>';
-            else if (pss <= 26) html += '<span style="color:#f39c12">压力水平中等</span>。您感受到了一定程度的压力，建议适当放松。</p>';
-            else html += '<span style="color:#e74c3c">压力水平较高</span>。您处于高压力状态，建议寻求专业帮助或进行压力管理。</p>';
+            const listHtml = `
+                <li>
+                    <span class="label">人员编码</span>
+                    <span class="value">${assessmentData.patient_id}</span>
+                </li>
+                <li>
+                    <span class="label">性别</span>
+                    <span class="value">${assessmentData.gender}</span>
+                </li>
+                <li>
+                    <span class="label">年龄</span>
+                    <span class="value">${assessmentData.age}岁</span>
+                </li>
+                <li>
+                    <span class="label">评估时间</span>
+                    <span class="value">${new Date().toLocaleString('zh-CN')}</span>
+                </li>
+                <li>
+                    <span class="label">PSS-10 感知压力</span>
+                    <div>
+                        <span class="value">${pss}分</span>
+                        <span class="status status-${pssResult.status}">${pssResult.level}</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">UCLA 孤独感</span>
+                    <div>
+                        <span class="value">${ucla}分</span>
+                        <span class="status status-${uclaResult.status}">${uclaResult.level}</span>
+                    </div>
+                </li>
+                <li>
+                    <span class="label">SDS 抑郁程度</span>
+                    <div>
+                        <span class="value">${sds}分</span>
+                        <span class="status status-${sdsResult.status}">${sdsResult.level}</span>
+                    </div>
+                </li>
+            `;
             
-            // UCLA解释
-            html += '<p><strong>孤独感 (UCLA)：</strong>';
-            if (ucla <= 28) html += '<span style="color:#27ae60">孤独感较低</span>。您的社交连接良好。</p>';
-            else if (ucla <= 44) html += '<span style="color:#f39c12">中等孤独感</span>。您偶尔感到孤独，建议增加社交活动。</p>';
-            else html += '<span style="color:#e74c3c">高孤独感</span>。您经常感到孤独，建议主动寻求社交支持。</p>';
+            document.getElementById('resultDetails').innerHTML = listHtml;
+        }
+
+        // 生成文本格式的结果（用于复制和邮件）
+        function generateTextResults(pss, ucla, sds) {
+            const pssResult = getResultLevel(pss, 'pss');
+            const uclaResult = getResultLevel(ucla, 'ucla');
+            const sdsResult = getResultLevel(sds, 'sds');
             
-            // SDS解释
-            html += '<p><strong>抑郁程度 (SDS)：</strong>';
-            if (sds < 53) html += '<span style="color:#27ae60">正常范围</span>。无抑郁症状。</p>';
-            else if (sds < 63) html += '<span style="color:#f39c12">轻度抑郁</span>。建议关注情绪变化，适当自我调节。</p>';
-            else if (sds < 73) html += '<span style="color:#e67e22">中度抑郁</span>。建议咨询专业心理医生。</p>';
-            else html += '<span style="color:#e74c3c">重度抑郁</span>。强烈建议尽快寻求专业心理帮助。</p>';
+            return `
+心理健康评估报告
+================
+
+【基本信息】
+人员编码：${assessmentData.patient_id}
+性别：${assessmentData.gender}
+年龄：${assessmentData.age}岁
+评估时间：${new Date().toLocaleString('zh-CN')}
+
+【评估结果】
+1. PSS-10 感知压力量表
+   得分：${pss}分
+   等级：${pssResult.level}
+   说明：${pssResult.desc}
+
+2. UCLA 孤独量表
+   得分：${ucla}分
+   等级：${uclaResult.level}
+   说明：${uclaResult.desc}
+
+3. SDS 抑郁自评量表
+   得分：${sds}分
+   等级：${sdsResult.level}
+   说明：${sdsResult.desc}
+
+【综合建议】
+${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
+
+================ 
+本评估仅供参考，不能替代专业诊断。
+如有需要，请咨询专业心理医生。
+            `.trim();
+        }
+
+        // 获取综合建议
+        function getComprehensiveAdvice(pssStatus, uclaStatus, sdsStatus) {
+            const advices = [];
+            if (pssStatus === 'warning') advices.push('压力水平较高，建议进行压力管理或寻求心理咨询');
+            if (uclaStatus === 'warning') advices.push('孤独感较强，建议主动参与社交活动，建立支持网络');
+            if (sdsStatus === 'warning') advices.push('抑郁症状明显，强烈建议尽快寻求专业心理帮助');
             
-            html += '<p style="margin-top:15px;font-size:0.9em;color:#888;">注：本评估仅供参考，不能替代专业诊断。如有需要，请咨询专业心理医生。</p>';
+            if (advices.length === 0) {
+                if (pssStatus === 'caution' || uclaStatus === 'caution' || sdsStatus === 'caution') {
+                    return '部分指标显示轻度异常，建议关注自身心理健康状态，适当调整生活方式。';
+                }
+                return '各项指标均在正常范围内，请继续保持良好的心理健康状态。';
+            }
             
-            return html;
+            return advices.join('；');
+        }
+
+        // 复制结果到剪贴板
+        function copyResults() {
+            const text = generateTextResults(assessmentData.pss, assessmentData.ucla, assessmentData.sds);
+            
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    btn.textContent = '✅ 已复制';
+                    btn.classList.add('copy-success');
+                    setTimeout(() => {
+                        btn.textContent = '📋 复制结果到剪贴板';
+                        btn.classList.remove('copy-success');
+                    }, 2000);
+                });
+            } else {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '✅ 已复制';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制结果到剪贴板';
+                }, 2000);
+            }
+        }
+
+        // 显示邮件状态
+        function showEmailStatus(status, message) {
+            const statusDiv = document.getElementById('emailStatus');
+            statusDiv.className = `email-status ${status}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+        }
+
+        // 使用Formspree发送邮件（备用方案）
+        async function sendWithFormspree(data) {
+            try {
+                const response = await fetch(FORMSPREE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        patient_id: data.patient_id,
+                        gender: data.gender,
+                        age: data.age,
+                        pss_score: data.pss,
+                        ucla_score: data.ucla,
+                        sds_score: data.sds,
+                        results: generateTextResults(data.pss, data.ucla, data.sds),
+                        _replyto: '244852188@qq.com',
+                        _subject: `心理健康评估报告 - ${data.patient_id}`
+                    })
+                });
+                
+                if (response.ok) {
+                    return { success: true, method: 'Formspree' };
+                } else {
+                    throw new Error('Formspree发送失败');
+                }
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // 使用EmailJS发送邮件
+        async function sendWithEmailJS(data) {
+            // 使用简单下划线变量名，与EmailJS模板完全匹配
+            const emailData = {
+                to_email: '244852188@qq.com',
+                subject: `心理健康评估报告 - 编码：${data.patient_id}`,
+                patient_id: data.patient_id,
+                gender: data.gender,
+                age: data.age,
+                test_date: new Date().toLocaleString('zh-CN'),
+                pss_score: data.pss,
+                ucla_score: data.ucla,
+                sds_score: data.sds,
+                pss_interpretation: getResultLevel(data.pss, 'pss').level,
+                ucla_interpretation: getResultLevel(data.ucla, 'ucla').level,
+                sds_interpretation: getResultLevel(data.sds, 'sds').level,
+                message: generateTextResults(data.pss, data.ucla, data.sds)
+            };
+
+            // 调试日志：确认数据正确
+            console.log('=== EmailJS发送数据 ===');
+            console.log('patient_id:', emailData.patient_id);
+            console.log('gender:', emailData.gender);
+            console.log('age:', emailData.age);
+            console.log('pss_score:', emailData.pss_score);
+            console.log('ucla_score:', emailData.ucla_score);
+            console.log('sds_score:', emailData.sds_score);
+            console.log('完整数据:', emailData);
+
+            try {
+                const result = await emailjs.send("service_cg9vrgm", "template_uj6dzik", emailData);
+                console.log('EmailJS发送成功:', result);
+                return { success: true, method: 'EmailJS', result: result };
+            } catch (error) {
+                console.error('EmailJS发送失败:', error);
+                throw error;
+            }
         }
 
         // 提交表单
@@ -750,8 +1084,8 @@
             document.getElementById(`section${currentSection}`).classList.remove('active');
             document.getElementById('loadingSection').classList.add('show');
 
-            // 收集数据
-            const patientId = document.getElementById('patientId').value;
+            // 收集数据 - 使用patient_id（带下划线）与模板匹配
+            const patient_id = document.getElementById('patient_id').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
             const age = document.getElementById('age').value;
             
@@ -759,74 +1093,92 @@
             const uclaScore = calculateUCLA();
             const sdsScore = calculateSDS();
 
-            // 准备邮件内容
-            const emailData = {
-                to_email: '244852188@qq.com',
-                subject: `心理健康评估报告 - 编码：${patientId}`,
-                patient_id: patientId,
+            // 存储数据
+            assessmentData = {
+                patient_id: patient_id,
                 gender: gender,
                 age: age,
-                test_date: new Date().toLocaleString('zh-CN'),
-                pss_score: pssScore,
-                ucla_score: uclaScore,
-                sds_score: sdsScore,
-                pss_interpretation: pssScore <= 13 ? '低压力' : pssScore <= 26 ? '中等压力' : '高压力',
-                ucla_interpretation: uclaScore <= 28 ? '低孤独感' : uclaScore <= 44 ? '中等孤独感' : '高孤独感',
-                sds_interpretation: sdsScore < 53 ? '正常' : sdsScore < 63 ? '轻度抑郁' : sdsScore < 73 ? '中度抑郁' : '重度抑郁',
-                message: `
-病人编码：${patientId}
-性别：${gender}
-年龄：${age}岁
-评估时间：${new Date().toLocaleString('zh-CN')}
-
-【评估结果】
-感知压力量表(PSS-10)：${pssScore}分 (${pssScore <= 13 ? '低压力' : pssScore <= 26 ? '中等压力' : '高压力'})
-UCLA孤独量表：${uclaScore}分 (${uclaScore <= 28 ? '低孤独感' : uclaScore <= 44 ? '中等孤独感' : '高孤独感'})
-SDS抑郁自评量表：${sdsScore}分 (${sdsScore < 53 ? '正常' : sdsScore < 63 ? '轻度抑郁' : sdsScore < 73 ? '中度抑郁' : '重度抑郁'})
-
-【详细数据】
-PSS-10原始分：${pssScore}
-UCLA原始分：${uclaScore} 
-SDS标准分：${sdsScore}（粗分×1.25）
-                `
+                pss: pssScore,
+                ucla: uclaScore,
+                sds: sdsScore
             };
 
+            console.log('评估数据:', assessmentData);
+
+            // 显示结果
+            document.getElementById('loadingSection').classList.remove('show');
+            document.getElementById('resultPanel').classList.add('show');
+            
+            // 更新分数显示
+            document.getElementById('pssScore').textContent = pssScore;
+            document.getElementById('uclaScore').textContent = uclaScore;
+            document.getElementById('sdsScore').textContent = sdsScore;
+            
+            // 设置颜色
+            const pssEl = document.getElementById('pssScore');
+            const pssResult = getResultLevel(pssScore, 'pss');
+            pssEl.className = 'score-value ' + pssResult.status;
+            
+            const uclaEl = document.getElementById('uclaScore');
+            const uclaResult = getResultLevel(uclaScore, 'ucla');
+            uclaEl.className = 'score-value ' + uclaResult.status;
+            
+            const sdsEl = document.getElementById('sdsScore');
+            const sdsResult = getResultLevel(sdsScore, 'sds');
+            sdsEl.className = 'score-value ' + sdsResult.status;
+            
+            // 生成详细列表
+            generateResultList(pssScore, uclaScore, sdsScore);
+            
+            // 生成文字解释
+            document.getElementById('interpretation').innerHTML = `
+                <h3 style="margin-bottom:15px;color:#333;">结果解读</h3>
+                <p><strong>感知压力 (PSS-10)：</strong>${pssScore}分 - ${pssResult.desc}</p>
+                <p><strong>孤独感 (UCLA)：</strong>${uclaScore}分 - ${uclaResult.desc}</p>
+                <p><strong>抑郁程度 (SDS)：</strong>${sdsScore}分 - ${sdsResult.desc}</p>
+                <p style="margin-top:15px;font-size:0.9em;color:#888;">注：本评估仅供参考，不能替代专业诊断。</p>
+            `;
+
+            // 尝试发送邮件（先EmailJS，失败则尝试Formspree）
+            let emailSent = false;
+            let emailMethod = '';
+            
             try {
-                // ✅ 发送邮件（使用 EmailJS）- 已启用
-                await emailjs.send("service_cg9vrgm", "template_uj6dzik", emailData);
-                
-                // 显示结果
-                document.getElementById('loadingSection').classList.remove('show');
-                document.getElementById('resultPanel').classList.add('show');
-                
-                // 更新分数显示
-                document.getElementById('pssScore').textContent = pssScore;
-                document.getElementById('uclaScore').textContent = uclaScore;
-                document.getElementById('sdsScore').textContent = sdsScore;
-                
-                // 设置颜色
-                const pssEl = document.getElementById('pssScore');
-                pssEl.className = 'score-value ' + (pssScore <= 13 ? 'normal' : pssScore <= 26 ? 'caution' : 'warning');
-                
-                const uclaEl = document.getElementById('uclaScore');
-                uclaEl.className = 'score-value ' + (uclaScore <= 28 ? 'normal' : uclaScore <= 44 ? 'caution' : 'warning');
-                
-                const sdsEl = document.getElementById('sdsScore');
-                sdsEl.className = 'score-value ' + (sdsScore < 53 ? 'normal' : sdsScore < 63 ? 'caution' : 'warning');
-                
-                document.getElementById('interpretation').innerHTML = getInterpretation(pssScore, uclaScore, sdsScore);
-                
+                // 首先尝试EmailJS
+                const result = await sendWithEmailJS(assessmentData);
+                emailSent = true;
+                emailMethod = result.method;
+                showEmailStatus('success', `✅ 报告已通过${emailMethod}发送至邮箱`);
                 showSuccess('评估完成！报告已发送至邮箱');
+            } catch (emailError) {
+                console.log('EmailJS失败，尝试Formspree...', emailError);
                 
-                // 同时输出到控制台，方便调试
-                console.log('评估数据：', emailData);
-                
-            } catch (error) {
-                document.getElementById('loadingSection').classList.remove('show');
-                document.getElementById(`section${currentSection}`).classList.add('active');
-                showError('发送失败，请检查网络或联系管理员');
-                console.error('发送错误：', error);
+                // 如果配置了Formspree ID，尝试Formspree
+                if (FORMSPREE_ID !== 'YOUR_FORMSPREE_ID') {
+                    try {
+                        const result = await sendWithFormspree(assessmentData);
+                        emailSent = true;
+                        emailMethod = result.method;
+                        showEmailStatus('success', `✅ 报告已通过${emailMethod}发送至邮箱`);
+                        showSuccess('评估完成！报告已发送至邮箱');
+                    } catch (formspreeError) {
+                        console.error('Formspree也失败:', formspreeError);
+                        showEmailStatus('warning', '⚠️ 邮件发送失败，请手动复制结果发送');
+                        showSuccess('评估完成！请手动复制结果');
+                    }
+                } else {
+                    showEmailStatus('warning', '⚠️ 邮件发送失败，请手动复制结果发送');
+                    showSuccess('评估完成！请手动复制结果');
+                }
             }
+
+            // 自动复制到剪贴板（作为备用）
+            if (!emailSent) {
+                copyResults();
+            }
+
+            // 滚动到结果区域
+            document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth' });
         }
 
         // 初始化进度条
