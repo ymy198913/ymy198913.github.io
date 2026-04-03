@@ -112,6 +112,7 @@
 
         input[type="text"],
         input[type="number"],
+        input[type="tel"],
         select {
             width: 100%;
             padding: 12px 15px;
@@ -123,6 +124,7 @@
 
         input[type="text"]:focus,
         input[type="number"]:focus,
+        input[type="tel"]:focus,
         select:focus {
             outline: none;
             border-color: #667eea;
@@ -520,6 +522,12 @@
                     <input type="number" id="age" name="age" min="1" max="120" placeholder="请输入年龄（岁）" required>
                 </div>
 
+                <!-- 新增：电话号码 -->
+                <div class="form-group">
+                    <label for="phone">电话号码 *</label>
+                    <input type="tel" id="phone" name="phone" placeholder="请输入联系电话" required>
+                </div>
+
                 <div class="btn-group">
                     <button type="button" class="btn-primary" onclick="nextSection(2)">开始评估</button>
                 </div>
@@ -870,6 +878,10 @@
                     <span class="value">${assessmentData.patient_id}</span>
                 </li>
                 <li>
+                    <span class="label">电话号码</span>
+                    <span class="value">${assessmentData.phone}</span>
+                </li>
+                <li>
                     <span class="label">性别</span>
                     <span class="value">${assessmentData.gender}</span>
                 </li>
@@ -919,6 +931,7 @@
 
 【基本信息】
 人员编码：${assessmentData.patient_id}
+电话号码：${assessmentData.phone}
 性别：${assessmentData.gender}
 年龄：${assessmentData.age}岁
 评估时间：${new Date().toLocaleString('zh-CN')}
@@ -1013,6 +1026,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
                     },
                     body: JSON.stringify({
                         patient_id: data.patient_id,
+                        phone: data.phone,
                         gender: data.gender,
                         age: data.age,
                         pss_score: data.pss,
@@ -1041,6 +1055,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
                 to_email: '244852188@qq.com',
                 subject: `心理健康评估报告 - 编码：${data.patient_id}`,
                 patient_id: data.patient_id,
+                phone: data.phone,
                 gender: data.gender,
                 age: data.age,
                 test_date: new Date().toLocaleString('zh-CN'),
@@ -1056,6 +1071,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
             // 调试日志：确认数据正确
             console.log('=== EmailJS发送数据 ===');
             console.log('patient_id:', emailData.patient_id);
+            console.log('phone:', emailData.phone);
             console.log('gender:', emailData.gender);
             console.log('age:', emailData.age);
             console.log('pss_score:', emailData.pss_score);
@@ -1084,8 +1100,9 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
             document.getElementById(`section${currentSection}`).classList.remove('active');
             document.getElementById('loadingSection').classList.add('show');
 
-            // 收集数据 - 使用patient_id（带下划线）与模板匹配
+            // 收集数据
             const patient_id = document.getElementById('patient_id').value;
+            const phone = document.getElementById('phone').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
             const age = document.getElementById('age').value;
             
@@ -1096,6 +1113,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
             // 存储数据
             assessmentData = {
                 patient_id: patient_id,
+                phone: phone,
                 gender: gender,
                 age: age,
                 pss: pssScore,
