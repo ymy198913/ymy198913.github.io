@@ -498,9 +498,15 @@
             <div class="section active" id="section1">
                 <h2 class="section-title">基础信息</h2>
                 
+                <!-- 新增：姓名 -->
                 <div class="form-group">
-                    <label for="patient_id">人员编码（请填写身份证号、姓名或病历号其中之一即可，以便能确定与临床信息匹配） *</label>
-                    <input type="text" id="patient_id" name="patient_id" placeholder="请输入身份证号、姓名或病历号" required>
+                    <label for="name">姓名 *</label>
+                    <input type="text" id="name" name="name" placeholder="请输入您的姓名" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="patient_id">人员编码（请填写身份证号、病历号其中之一即可，以便能确定与临床信息匹配） *</label>
+                    <input type="text" id="patient_id" name="patient_id" placeholder="请输入身份证号或病历号" required>
                 </div>
 
                 <div class="form-group">
@@ -874,6 +880,10 @@
             
             const listHtml = `
                 <li>
+                    <span class="label">姓名</span>
+                    <span class="value">${assessmentData.name}</span>
+                </li>
+                <li>
                     <span class="label">人员编码</span>
                     <span class="value">${assessmentData.patient_id}</span>
                 </li>
@@ -930,6 +940,7 @@
 ================
 
 【基本信息】
+姓名：${assessmentData.name}
 人员编码：${assessmentData.patient_id}
 电话号码：${assessmentData.phone}
 性别：${assessmentData.gender}
@@ -1054,6 +1065,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
             const emailData = {
                 to_email: '244852188@qq.com',
                 subject: `心理健康评估报告 - 编码：${data.patient_id}`,
+                name: data.name,
                 patient_id: data.patient_id,
                 phone: data.phone,
                 gender: data.gender,
@@ -1070,6 +1082,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
 
             // 调试日志：确认数据正确
             console.log('=== EmailJS发送数据 ===');
+            console.log('name:', emailData.name);
             console.log('patient_id:', emailData.patient_id);
             console.log('phone:', emailData.phone);
             console.log('gender:', emailData.gender);
@@ -1101,6 +1114,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
             document.getElementById('loadingSection').classList.add('show');
 
             // 收集数据
+            const name = document.getElementById('name').value;
             const patient_id = document.getElementById('patient_id').value;
             const phone = document.getElementById('phone').value;
             const gender = document.querySelector('input[name="gender"]:checked').value;
@@ -1112,6 +1126,7 @@ ${getComprehensiveAdvice(pssResult.status, uclaResult.status, sdsResult.status)}
 
             // 存储数据
             assessmentData = {
+                name: name,
                 patient_id: patient_id,
                 phone: phone,
                 gender: gender,
